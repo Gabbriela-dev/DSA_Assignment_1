@@ -6,10 +6,13 @@ map<Institution> institutionStore = {};
 service /assets on new http:Listener(8080) {
 
     resource function post .(@http:Payload Asset newAsset) returns CreateResponse|http:Conflict {
+        if assetStore.hasKey(newAsset.assetTag) {
+            return http:CONFLICT;
+        }
         assetStore[newAsset.assetTag] = newAsset;
         return {message: "Asset created successfully", asset: newAsset};
     }
-
+    
     resource function get [string assetTag] () returns Asset|http:NotFound {
         Asset? found = assetStore[assetTag];
         if found is () {
