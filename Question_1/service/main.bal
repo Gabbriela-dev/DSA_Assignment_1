@@ -21,4 +21,20 @@ service /assets on new http:Listener(8080) {
     resource function get .() returns Asset[] {
         return assetStore.toArray();
     }
+
+        resource function put [string assetTag](@http:Payload Asset updatedAsset) returns Asset|http:NotFound {
+        if !assetStore.hasKey(assetTag) {
+            return http:NOT_FOUND;
+        }
+        assetStore[assetTag] = updatedAsset;
+        return updatedAsset;
+    }
+
+    resource function delete [string assetTag]() returns CreateResponse|http:NotFound {
+        if !assetStore.hasKey(assetTag) {
+            return http:NOT_FOUND;
+        }
+        Asset removed = assetStore.remove(assetTag);
+        return {message: "Asset deleted successfully", asset: removed};
+    }
 }
