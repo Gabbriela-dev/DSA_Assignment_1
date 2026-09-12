@@ -25,3 +25,8 @@ type ErrorResponse record {
 type Institution record {
     string name;
 };
+
+// Placeholders
+type Component record {};
+type Schedule record {};
+type WorkOrder record {};
