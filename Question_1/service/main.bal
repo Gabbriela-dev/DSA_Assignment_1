@@ -5,18 +5,21 @@ map<Institution> institutionStore = {};
 
 service /assets on new http:Listener(8080) {
 
-    resource function post .(@http:Payload Asset newAsset) returns CreateResponse|http:Conflict {
+    resource function post .(@http:Payload Asset newAsset) returns CreateResponse|http:Conflict|http:BadRequest {
+        if !isValidDate(newAsset.dateAcquired) {
+            return badRequestError("Invalid dateAcquired format, expected YYYY-MM-DD");
+        }
         if assetStore.hasKey(newAsset.assetTag) {
-            return http:CONFLICT;
+            return conflictError("Asset with this assetTag already exists");
         }
         assetStore[newAsset.assetTag] = newAsset;
         return {message: "Asset created successfully", asset: newAsset};
     }
-    
+
     resource function get [string assetTag] () returns Asset|http:NotFound {
         Asset? found = assetStore[assetTag];
         if found is () {
-            return http:NOT_FOUND;
+            return notFoundError("Asset not found");
         }
         return found;
     }
@@ -25,9 +28,9 @@ service /assets on new http:Listener(8080) {
         return assetStore.toArray();
     }
 
-        resource function put [string assetTag](@http:Payload Asset updatedAsset) returns Asset|http:NotFound {
+    resource function put [string assetTag](@http:Payload Asset updatedAsset) returns Asset|http:NotFound {
         if !assetStore.hasKey(assetTag) {
-            return http:NOT_FOUND;
+            return notFoundError("Asset not found");
         }
         assetStore[assetTag] = updatedAsset;
         return updatedAsset;
@@ -35,7 +38,7 @@ service /assets on new http:Listener(8080) {
 
     resource function delete [string assetTag]() returns CreateResponse|http:NotFound {
         if !assetStore.hasKey(assetTag) {
-            return http:NOT_FOUND;
+            return notFoundError("Asset not found");
         }
         Asset removed = assetStore.remove(assetTag);
         return {message: "Asset deleted successfully", asset: removed};
