@@ -1,0 +1,167 @@
+syntax = "proto3";
+
+package rental;
+
+service RentalAccommodation {
+
+    rpc add_property(AddPropertyRequest)
+        returns (AddPropertyResponse);
+
+    rpc create_users(stream User)
+        returns (CreateUsersResponse);
+
+    rpc update_property(UpdatePropertyRequest)
+        returns (PropertyResponse);
+
+    rpc remove_property(RemovePropertyRequest)
+        returns (PropertyListResponse);
+
+    rpc list_available_properties(ListPropertiesRequest)
+        returns (stream Property);
+
+    rpc search_property(SearchPropertyRequest)
+        returns (SearchPropertyResponse);
+
+    rpc book_property(BookPropertyRequest)
+        returns (BookingCartResponse);
+
+    rpc confirm_booking(ConfirmBookingRequest)
+        returns (BookingConfirmation);
+}
+
+
+// PROPERTY 
+
+message Property {
+    string property_id = 1;
+    string host_id = 2;
+    string property_name = 3;
+    string location = 4;
+    string region = 5;
+    string property_type = 6;
+    double price_per_night = 7;
+    string status = 8;
+}
+
+message AddPropertyRequest {
+    string host_id = 1;
+    string property_name = 2;
+    string location = 3;
+    string region = 4;
+    string property_type = 5;
+    double price_per_night = 6;
+    string status = 7;
+}
+
+message AddPropertyResponse {
+    bool success = 1;
+    string message = 2;
+    string property_id = 3;
+}
+
+
+//  UPDATE PROPERTY
+
+message UpdatePropertyRequest {
+    string property_id = 1;
+    string property_name = 2;
+    string location = 3;
+    string region = 4;
+    string property_type = 5;
+    double price_per_night = 6;
+    string status = 7;
+}
+
+message PropertyResponse {
+    bool success = 1;
+    string message = 2;
+    Property property = 3;
+}
+
+
+// REMOVE PROPERTY 
+
+message RemovePropertyRequest {
+    string property_id = 1;
+    string host_id = 2;
+}
+
+message PropertyListResponse {
+    bool success = 1;
+    string message = 2;
+    repeated Property properties = 3;
+}
+
+
+//  USERS 
+
+message User {
+    string user_id = 1;
+    string name = 2;
+    string email = 3;
+    string role = 4;
+}
+
+message CreateUsersResponse {
+    bool success = 1;
+    string message = 2;
+    int32 users_created = 3;
+}
+
+
+//  LIST / SEARCH
+
+message ListPropertiesRequest {
+    string location = 1;
+    double min_price = 2;
+    double max_price = 3;
+}
+
+message SearchPropertyRequest {
+    string property_id = 1;
+}
+
+message SearchPropertyResponse {
+    bool success = 1;
+    string status = 2;
+    string message = 3;
+    Property property = 4;
+}
+
+
+//BOOK PROPERTY 
+
+message BookPropertyRequest {
+    string guest_id = 1;
+    string property_id = 2;
+    string check_in_date = 3;
+    string check_out_date = 4;
+}
+
+message BookingCartResponse {
+    bool success = 1;
+    string message = 2;
+    string guest_id = 3;
+    string property_id = 4;
+    string check_in_date = 5;
+    string check_out_date = 6;
+}
+
+
+ //CONFIRM BOOKING
+
+message ConfirmBookingRequest {
+    string guest_id = 1;
+}
+
+message BookingConfirmation {
+    bool success = 1;
+    string message = 2;
+    string booking_id = 3;
+    string property_id = 4;
+    string guest_id = 5;
+    string check_in_date = 6;
+    string check_out_date = 7;
+    int32 number_of_nights = 8;
+    double total_cost = 9;
+}
