@@ -1,5 +1,34 @@
 type AssetStatus "AVAILABLE"|"LOANED_OUT"|"UNDER_MAINTENANCE"|"DISPOSED";
 
+type Component record {
+    string compId;
+    string name;
+    string description;
+};
+
+type ScheduleType "MAINTENANCE"|"BOOKING";
+
+type Schedule record {
+    string scheduleId;
+    ScheduleType 'type;
+    string dueDate;
+    string description;
+};
+
+type Task record {
+    string taskId;
+    string description;
+};
+
+type WorkOrderStatus "OPEN"|"IN_PROGRESS"|"CLOSED";
+
+type WorkOrder record {
+    string orderId;
+    WorkOrderStatus status;
+    string description;
+    Task[] tasks;
+};
+
 type Asset record {
     string assetTag;
     string name;
@@ -18,24 +47,10 @@ type CreateResponse record {
     Asset asset;
 };
 
+type Institution record {
+    string name;
+};
+
 type ErrorResponse record {
     string message;
 };
-
-type Institution record {
-    string name;
-    string location?;
-};
-
-// Placeholders
-type Component record {};
-
-type ScheduleType "MAINTENANCE"|"BOOKING";
-
-type Schedule record {
-    string scheduleId;
-    ScheduleType 'type;
-    string dueDate;
-    string description;
-};
-type WorkOrder record {};
