@@ -1,4 +1,5 @@
 import ballerina/http;
+import ballerina/time;
 
 map<Asset> assetStore = {};
 map<Institution> institutionStore = {};
@@ -43,4 +44,96 @@ service /assets on new http:Listener(8080) {
         Asset removed = assetStore.remove(assetTag);
         return {message: "Asset deleted successfully", asset: removed};
     }
+    resource function get institution/[string institution]() returns Asset[] {
+        return assetStore.toArray().filter(a => a.institution == institution);
+    }
+
+    resource function get site/[string site]() returns Asset[] {
+        return assetStore.toArray().filter(a => a.site == site);
+    }
+
+    resource function post [string assetTag]/schedules(@http:Payload Schedule newSchedule) returns Asset|http:NotFound|http:Conflict|http:BadRequest {
+        Asset? found = assetStore[assetTag];
+        if found is () {
+            return notFoundError("Asset not found");
+        }
+        if !isValidDate(newSchedule.dueDate) {
+            return badRequestError("Invalid dueDate format, expected YYYY-MM-DD");
+        }
+        if found.schedules.some(s => s.scheduleId == newSchedule.scheduleId) {
+            return conflictError("Schedule with this scheduleId already exists");
+        }
+        found.schedules.push(newSchedule);
+        assetStore[assetTag] = found;
+        return found;
+    }
+
+    resource function delete [string assetTag]/schedules/[string scheduleId]() returns Asset|http:NotFound {
+        Asset? found = assetStore[assetTag];
+        if found is () {
+            return notFoundError("Asset not found");
+        }
+        if !found.schedules.some(s => s.scheduleId == scheduleId) {
+            return notFoundError("Schedule not found");
+        }
+        found.schedules = found.schedules.filter(s => s.scheduleId != scheduleId);
+        assetStore[assetTag] = found;
+        return found;
+    }
+
+    resource function get overdue() returns Asset[] {
+        time:Utc currentUtc = time:utcNow();
+        time:Civil currentCivil = time:utcToCivil(currentUtc);
+        string today = string `${currentCivil.year}-${currentCivil.month.toString().padZero(2)}-${currentCivil.day.toString().padZero(2)}`;
+        return assetStore.toArray().filter(a => a.schedules.some(s => s.dueDate < today));
+    }
+
+    resource function post institutions(@http:Payload Institution newInstitution) returns Institution|http:Conflict {
+        if institutionStore.hasKey(newInstitution.name) {
+            return conflictError("Institution already exists");
+        }
+        institutionStore[newInstitution.name] = newInstitution;
+        return newInstitution;
+    }
+
+    resource function delete institutions/[string name]() returns Institution|http:NotFound {
+        Institution? found = institutionStore[name];
+        if found is () {
+            return notFoundError("Institution not found");
+        }
+        _ = institutionStore.remove(name);
+        return found;
+    }
+
+    resource function get institutions() returns Institution[] {
+        return institutionStore.toArray();
+    }
+}
+
+function isValidDate(string dateStr) returns boolean {
+    return dateStr.matches(re `^\d{4}-\d{2}-\d{2}$`);
+}
+
+function badRequestError(string message) returns http:BadRequest {
+    return {
+        body: {
+            message: message
+        }
+    };
+}
+
+function conflictError(string message) returns http:Conflict {
+    return {
+        body: {
+            message: message
+        }
+    };
+}
+
+function notFoundError(string message) returns http:NotFound {
+    return {
+        body: {
+            message: message
+        }
+    };
 }
