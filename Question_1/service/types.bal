@@ -24,9 +24,18 @@ type ErrorResponse record {
 
 type Institution record {
     string name;
+    string location?;
 };
 
 // Placeholders
 type Component record {};
-type Schedule record {};
+
+type ScheduleType "MAINTENANCE"|"BOOKING";
+
+type Schedule record {
+    string scheduleId;
+    ScheduleType 'type;
+    string dueDate;
+    string description;
+};
 type WorkOrder record {};
