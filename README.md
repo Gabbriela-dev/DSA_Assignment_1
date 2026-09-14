@@ -8,7 +8,7 @@ This is our group submission for DSA Assignment 1: a multi-resource RESTful HTTP
 
 We split the work into three parts so each person owned a clear chunk of the system:
 
-| Role | Student Name / ID | Responsibilities & Assigned Modules |
+| Role | Student Name | Responsibilities & Assigned Modules |
 
 | **Person A** | Gabbriela Kapitango | **Users & Sites Management** — user profiles, authentication, and role definitions; site registration (`/users`, `/sites`) |
 | **Person B** | Erica Malima | **Schedules & Institutions Management** — event calendar and institution registry (`/schedules`, `/institutions`); filtering and overdue-schedule detection |
