@@ -17,7 +17,11 @@ function badRequestError(string message) returns http:BadRequest {
 }
 
 function isValidDate(string date) returns boolean {
-    return date.matches(re `^[0-9]{4}-[0-9]{2}-[0-9]{2}$`);
+    if !date.matches(re `^[0-9]{4}-[0-9]{2}-[0-9]{2}$`) {
+        return false;
+    }
+    time:Utc|error parsed = time:utcFromString(date + "T00:00:00.00Z");
+    return parsed is time:Utc;
 }
 
 service /assets on new http:Listener(8080) {
@@ -45,10 +49,14 @@ service /assets on new http:Listener(8080) {
         return assetStore.toArray();
     }
 
-    resource function put [string assetTag](@http:Payload Asset updatedAsset) returns Asset|http:NotFound {
+    resource function put [string assetTag](@http:Payload Asset updatedAsset) returns Asset|http:NotFound|http:BadRequest {
         if !assetStore.hasKey(assetTag) {
             return notFoundError("Asset not found");
         }
+        if !isValidDate(updatedAsset.dateAcquired) {
+            return badRequestError("Invalid dateAcquired format, expected YYYY-MM-DD");
+        }
+        updatedAsset.assetTag = assetTag;
         assetStore[assetTag] = updatedAsset;
         return updatedAsset;
     }
@@ -90,6 +98,9 @@ service /assets on new http:Listener(8080) {
         if found is () {
             return notFoundError("Asset not found");
         }
+        if !found.schedules.some(s => s.scheduleId == scheduleId) {
+            return notFoundError("Schedule not found");
+        }
         found.schedules = found.schedules.filter(s => s.scheduleId != scheduleId);
         assetStore[assetTag] = found;
         return found;
@@ -99,7 +110,7 @@ service /assets on new http:Listener(8080) {
         time:Utc currentUtc = time:utcNow();
         time:Civil currentCivil = time:utcToCivil(currentUtc);
         string today = string `${currentCivil.year}-${currentCivil.month.toString().padZero(2)}-${currentCivil.day.toString().padZero(2)}`;
-        return assetStore.toArray().filter(a => a.schedules.some(s => s.dueDate < today));
+        return assetStore.toArray().filter(a => a.schedules.some(s => s.'type == "MAINTENANCE" && s.dueDate < today));
     }
 
     resource function post institutions(@http:Payload Institution newInstitution) returns Institution|http:Conflict {
@@ -141,6 +152,9 @@ service /assets on new http:Listener(8080) {
         if found is () {
             return notFoundError("Asset not found");
         }
+        if !found.components.some(c => c.compId == compId) {
+            return notFoundError("Component not found");
+        }
         found.components = found.components.filter(c => c.compId != compId);
         assetStore[assetTag] = found;
         return found;
@@ -164,6 +178,10 @@ service /assets on new http:Listener(8080) {
         if found is () {
             return notFoundError("Asset not found");
         }
+        if !found.workOrders.some(wo => wo.orderId == orderId) {
+            return notFoundError("Work order not found");
+        }
+        updatedOrder.orderId = orderId;
         found.workOrders = found.workOrders.map(wo => wo.orderId == orderId ? updatedOrder : wo);
         assetStore[assetTag] = found;
         return found;
@@ -174,6 +192,9 @@ service /assets on new http:Listener(8080) {
         if found is () {
             return notFoundError("Asset not found");
         }
+        if !found.workOrders.some(wo => wo.orderId == orderId) {
+            return notFoundError("Work order not found");
+        }
         found.workOrders = found.workOrders.filter(wo => wo.orderId != orderId);
         assetStore[assetTag] = found;
         return found;
@@ -183,6 +204,9 @@ service /assets on new http:Listener(8080) {
         Asset? found = assetStore[assetTag];
         if found is () {
             return notFoundError("Asset not found");
+        }
+        if !found.workOrders.some(wo => wo.orderId == orderId) {
+            return notFoundError("Work order not found");
         }
         WorkOrder[] updatedOrders = [];
         foreach WorkOrder wo in found.workOrders {
