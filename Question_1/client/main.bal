@@ -40,19 +40,13 @@ function printAsset(Asset a) {
 }
 
 function describeError(error err) returns string {
-    anydata|error detail = trap err.detail();
-    if detail is map<anydata> {
-        anydata sc = detail["statusCode"];
-        if sc is int {
-            if sc == 404 {
-                return "Not found on the server (404).";
-            } else if sc == 409 {
-                return "Conflict — already exists (409).";
-            } else if sc == 400 {
-                return "Bad request — check your input (400).";
-            }
-            return "Server responded with status " + sc.toString() + ".";
-        }
+    string msg = err.message();
+    if msg.includes("404") {
+        return "Not found on the server (404).";
+    } else if msg.includes("409") {
+        return "Conflict — already exists (409).";
+    } else if msg.includes("400") {
+        return "Bad request — check your input (400).";
     }
     return "Could not reach the service. Is it running?";
 }
